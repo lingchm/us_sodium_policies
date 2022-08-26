@@ -1,0 +1,12 @@
+name: Rshiny
+title: Rshiny
+username:
+account: us-sodium-policies
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6842201
+bundleId: 6241296
+url: https://us-sodium-policies.shinyapps.io/Rshiny/
+when: 1661529815.64985
+asMultiple: FALSE
+asStatic: FALSE
