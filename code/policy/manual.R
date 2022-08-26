@@ -1,3 +1,7 @@
+##################
+# Manually added policies 
+##################
+
 library(readr)
 library(dplyr)
 library(ggplot2)
@@ -6,11 +10,10 @@ library(polite)
 library(data.table)
 library(rvest) # https://rvest.tidyverse.org/articles/rvest.html
 
-setwd("/Users/lingchm/Dropbox (GaTech)/I-research/9_su/updates/1-policies")
+setwd("/Users/lingchm/Documents/Github/us_sodium_policies")
 
-##################
-# Manually added policies 
-##################
+source("code/preprocessing/utils.R")
+
 
 # prepare table schema 
 table_master <- data.frame(state = character(),
@@ -279,6 +282,6 @@ table_master <- table_master %>% add_row(state = "MD",
 
 ####
 # export to csv
-fwrite(table_master, "manual_database.csv")
+fwrite(table_master, "data/policy/manual_database.csv")
 
 

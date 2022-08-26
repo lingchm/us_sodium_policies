@@ -1,3 +1,9 @@
+####################################
+# Scrap policies from NCSL database 
+# Author: Lingchao Mao
+# Last modified: 8/24/2022
+####################################
+
 library(readr)
 library(dplyr)
 library(ggplot2)
@@ -6,208 +12,13 @@ library(polite)
 library(data.table)
 library(rvest) # https://rvest.tidyverse.org/articles/rvest.html
 
-setwd("/Users/lingchm/Documents/Github/us_sodium_policy_dashboard")
+setwd("/Users/lingchm/Documents/Github/us_sodium_policies")
+
+source("code/preprocessing/utils.R")
 
 
-##################
-# Functions
-##################
+##################  scrap data from the NCSL website ################## 
 
-extractAge <- function(descriptions){
-  categories <- c("toddler", "children", "elderly", "other") 
-  age_group <- data.frame(c(1:length(categories))*0, row.names=categories)
-  for (i in 1:length(descriptions)) {
-    if (grepl("school", descriptions[i], ignore.case=TRUE))
-    {
-      age_group["children",] = 1
-    }
-    if (grepl("elder", descriptions[i], ignore.case=TRUE) | 
-        grepl("older", descriptions[i], ignore.case=TRUE) | 
-        grepl("senior", descriptions[i], ignore.case=TRUE))
-    {
-      age_group["elderly",] = 1
-    }
-    if (grepl("infant", descriptions[i], ignore.case=TRUE) | 
-        grepl("toddler", descriptions[i], ignore.case=TRUE) )
-    {
-      age_group["children",] = 1
-      age_group["toddler",] = 1
-    }
-    if (sum(age_group) == 0) {
-      age_group["other",] = 1
-    }
-  }
-  return(age_group)
-}
-
-
-extractOrganizations <- function(descriptions) {
-  categories <- c("school", "farmers", "groceries", "army", "hospital", 
-                  "restaurant", "vendingmachine", "public", "other") 
-  organization <- data.frame(c(1:length(categories))*0,
-                             row.names=categories)
-  for (i in 1:length(descriptions)) {
-    if (grepl("school", descriptions[i], ignore.case=TRUE))
-    {
-      organization["school",] = 1
-    }
-    if (grepl("farmer", descriptions[i], ignore.case=TRUE)) {
-      organization["farmers",] = 1
-    }  
-    if (grepl("grocer", descriptions[i], ignore.case=TRUE)) {
-      organization["groceries",] = 1
-    } 
-    if (grepl("army", descriptions[i], ignore.case=TRUE) | 
-        grepl("veteran", descriptions[i], ignore.case=TRUE)) {
-      organization["army",] = 1
-    } 
-    if (grepl("restaurant", descriptions[i], ignore.case=TRUE)) {
-      organization["restaurant",] = 1
-    } 
-    if (grepl("hospital", descriptions[i], ignore.case=TRUE) | 
-        grepl("health program", descriptions[i], ignore.case=TRUE)) {
-      organization["hospital",] = 1
-    } 
-    if (grepl("vending machine", descriptions[i], ignore.case=TRUE)) {
-      organization["vendingmachine",] = 1
-    } 
-    if (grepl("city-owned", descriptions[i], ignore.case=TRUE) | 
-        grepl("city owned", descriptions[i], ignore.case=TRUE) | 
-        grepl("city propert", descriptions[i], ignore.case=TRUE) |
-        grepl("city funded", descriptions[i], ignore.case=TRUE) | 
-        grepl("city facilit", descriptions[i], ignore.case=TRUE) |
-        grepl("city contracted", descriptions[i], ignore.case=TRUE)  |
-        grepl("city-sponsored", descriptions[i], ignore.case=TRUE) | 
-        grepl("county-owned", descriptions[i], ignore.case=TRUE) | 
-        grepl("county owned", descriptions[i], ignore.case=TRUE) |
-        grepl("county funded", descriptions[i], ignore.case=TRUE) | 
-        grepl("county facilit", descriptions[i], ignore.case=TRUE) | 
-        grepl("county-contracted", descriptions[i], ignore.case=TRUE) |
-        grepl("county property", descriptions[i], ignore.case=TRUE |
-              grepl("public", descriptions[i], ignore.case=TRUE))) {
-      organization["public",] = 1
-    }  
-  }
-  if (sum(organization) == 0) {
-    organization["other",] = 1
-  }
-  return(organization)
-}
-
-
-extractPolicyCategory <- function(descriptions){
-  categories <- c("Institutional Procurement", 
-                  "Educational Campaign", 
-                  "Nutrition Labeling", 
-                  "Nutrition Standards",
-                  "Product Reformulation",
-                  "other")
-  policy_category_who <- data.frame(c(1:length(categories))*0, row.names=categories)
-  for (i in 1:length(descriptions)) {
-    if (grepl("Procurement", descriptions[i], ignore.case=TRUE))
-    {
-      policy_category_who["Institutional Procurement",] = 1
-    }
-    if (grepl("campaign", descriptions[i], ignore.case=TRUE) |
-        grepl("Information Gathering", descriptions[i], ignore.case=TRUE) |
-        grepl("educational", descriptions[i], ignore.case=TRUE))
-    {
-      policy_category_who["Educational Campaign",] = 1
-    }
-    if (grepl("labeling", descriptions[i], ignore.case=TRUE))
-    {
-      policy_category_who["Nutrition Labeling",] = 1
-    }
-    if (grepl("new standards", descriptions[i], ignore.case=TRUE)) # not good keyword
-    {
-      policy_category_who["Nutrition Standards",] = 1
-    }
-    if (grepl("reformulation", descriptions[i], ignore.case=TRUE))
-    {
-      policy_category_who["Product Reformulation",] = 1
-    }
-  }
-  if (sum(policy_category_who) == 0) {
-    policy_category_who["other",] = 1
-  }
-  return(policy_category_who)
-}
-
-
-extractPolicyCategoryDetailed <- function(descriptions){
-  categories <- c("Voluntary",
-                  "Mandatory",
-                  "Task forces",
-                  "Studies or reports", 
-                  "Pricing Strategies",
-                  "Farmer's Market Incentives")
-  policy_category_detailed <- data.frame(c(1:length(categories))*0, row.names=categories)
-  for (i in 1:length(descriptions)) {
-    if (grepl("voluntary", descriptions[i], ignore.case=TRUE))
-    {
-      policy_category_detailed["Voluntary",] = 1
-    }
-    if (grepl("mandatory", descriptions[i], ignore.case=TRUE))
-    {
-      policy_category_detailed["Mandatory",] = 1
-    }
-    if (grepl("task force", descriptions[i], ignore.case=TRUE))
-    {
-      policy_category_detailed["Task forces",] = 1
-    }
-    if (grepl("studies", descriptions[i], ignore.case=TRUE)) # not good keyword
-    {
-      policy_category_detailed["Studies or reports",] = 1
-    }
-    if (grepl("pricing strateg", descriptions[i], ignore.case=TRUE))
-    {
-      policy_category_detailed["Pricing Strategies",] = 1
-    }
-    if (grepl("incentives", descriptions[i], ignore.case=TRUE) & 
-        grepl("farmer", descriptions[i], ignore.case=TRUE))
-    {
-      policy_category_detailed["Farmer's Market Incentives",] = 1
-    }
-  }
-  return(policy_category_detailed)
-}
-
-
-####
-
-
-extractPolicyTypeSimple <- function(description){
-  return(ifelse(description=="Regulations", "Law",
-                ifelse(description=="Regulation", "Law",
-                       ifelse(description=="Reguulation", "Law",
-                              ifelse(description=="Statutes", "Law",
-                                     ifelse(description=="Statute", "Law",
-                                            ifelse(description=="Resolution", "Law",
-                                                   ifelse(description=="Statutes and Regulation", "Law",
-                                                          ifelse(description=="Statute and Regulations", "Law",
-                                                                 ifelse(description=="Statutes and Regulations", "Law",
-                                                                        ifelse(description=="Policies", "Administrative Rule", 
-                                                                               ifelse(description=="Policy", "Administrative Rule", 
-                                                                                      ifelse(description=="Executive", "Executive Order", 
-                                                                                             ifelse(description=="Executive Order", "Executive Order", 
-                                                                                                    "other"))))))))))))))
-}
-
-extractPolicyType <- function(description){
-  return(ifelse(grepl("polic", description, ignore.case=TRUE), "Policy", 
-                ifelse(grepl("executive order", description, ignore.case=TRUE), "Executive Order", 
-                       ifelse(grepl("executive", description, ignore.case=TRUE), "Executive Order", 
-                              ifelse(grepl("resolution", description, ignore.case=TRUE), "Resolution", 
-                                     ifelse(grepl("statute", description, ignore.case=TRUE), "Statute", 
-                                            ifelse(grepl("regulation", description, ignore.case=TRUE), "Regulation",
-                                                   "other")))))))
-}
-
-
-##################
-# NCSL data
-##################
-# scrap data from the NCSL website
 url <- "https://www.ncsl.org/research/health/analysis-of-state-laws-related-to-dietary-sodium.aspx"
 target <- bow(url,user_agent = "lingchm@gmail.com for UW research project", force = TRUE)
 html <- scrape(target)
@@ -426,4 +237,4 @@ table(table_master$organization_restaurant)
 table(table_master$organization_public)
 table(table_master$organization_hospital)
 
-fwrite(table_master, "data/ncsl_database_20220613.csv")
+fwrite(table_master, "data/policy/ncsl_database_20220613.csv")

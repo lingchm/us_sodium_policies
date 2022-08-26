@@ -1,3 +1,7 @@
+##################
+# Create panel data
+##################
+
 library(readr)
 library(dplyr)
 library(ggplot2)
@@ -6,73 +10,15 @@ library(polite)
 library(data.table)
 library(rvest) # https://rvest.tidyverse.org/articles/rvest.html
 library(readxl)
+
+# load data
 setwd("/Users/lingchm/Documents/Github/us_sodium_policies")
-
-
-##################
-# Combine data from multiple sources
-##################
-
-# load data
-file = "data/central_database_20220620_LM.xlsx"
-manual_database <- as.data.frame(read_excel(file, sheet = "manual_database"))
-ncsl_database <- as.data.frame(read_excel(file, sheet = "ncsl_database"))
-cspi_database <- as.data.frame(read_excel(file, sheet = "cspi_database"))
-
-# combine into one
-all_database <- rbind(ncsl_database, cspi_database, manual_database)
-
-# check again for age
-
-extractAge <- function(descriptions){
-  categories <- c("toddler", "children", "elderly", "other") 
-  age_group <- data.frame(c(1:length(categories))*0, row.names=categories)
-  for (i in 1:length(descriptions)) {
-    if (grepl("school", descriptions[i], ignore.case=TRUE))
-    {
-      age_group["children",] = 1
-    }
-    if (grepl("elder", descriptions[i], ignore.case=TRUE) | 
-        grepl("older", descriptions[i], ignore.case=TRUE) | 
-        grepl("senior", descriptions[i], ignore.case=TRUE))
-    {
-      age_group["elderly",] = 1
-    }
-    if (grepl("infant", descriptions[i], ignore.case=TRUE) | 
-        grepl("toddler", descriptions[i], ignore.case=TRUE) )
-    {
-      age_group["children",] = 1
-      age_group["toddler",] = 1
-    }
-    if (sum(age_group) == 0) {
-      age_group["other",] = 1
-    }
-  }
-  return(as.data.frame(age_group))
-}
-
-age_all = NA
-for (i in 1:nrow(all_database)){
-  age <- t(extractAge(all_database[i,]$description))
-  age_all <- rbind(age_all, age)
-}
-age_all <- as.data.frame(age_all)
-table(age_all$children)
-table(age_all$elderly)
-table(all_database$age_elderly)
-all_database[1,]$description
-
-
-fwrite(all_database, "data/central_database_20220620.csv")
-
-
-##################
-# Create panel data
-##################
-
-# load data
-df_policies <- fread("data/central_database_20220620.csv")
+df_policies <- fread("data/policy/central_database_cleaned_20220824.csv")
 census_state_year <- fread("data/datacensus_state_year_all.csv")
+
+source("code/preprocessing/utils.R")
+
+
 
 # filter out national ones for now
 START_YEAR = 2000

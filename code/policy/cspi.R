@@ -1,3 +1,9 @@
+####################################
+# Scrap policies from CSPL database 
+# Author: Lingchao Mao
+# Last modified: 8/24/2022
+####################################
+
 library(readr)
 library(dplyr)
 library(ggplot2)
@@ -6,11 +12,11 @@ library(polite)
 library(data.table)
 library(rvest) # https://rvest.tidyverse.org/articles/rvest.html
 
-setwd("/Users/lingchm/Dropbox (GaTech)/I-research/9_su/updates/1-policies")
+setwd("/Users/lingchm/Documents/Github/us_sodium_policies")
+source("code/preprocessing/utils.R")
 
-##################
-# PDF data converted to TXT
-##################
+
+################## PDF data converted to TXT ################## 
 
 # read in data
 fileName <- "data/original/center for science in the public interest's sodiu mpolicy database.txt"
@@ -67,10 +73,9 @@ for (i in 4:length(linn)){   # omit first three lines   #for (i in 1:length(linn
   if(grepl("•", linn[i], fixed = TRUE)){
     if(i > 5) {
       policy_type <- extractPolicyType(body)
-      organization <- extractOrganizations(body)
+      organization <- extractOrganization(body)
       age_group <- extractAge(body)
       policy_category <- extractPolicyCategory(body)
-      policy_category_detail <- extractPolicyCategoryDetailed(body)
       policy_type <- extractPolicyType(body)
       table_pdf <- table_pdf %>% add_row(
         state = state, 
@@ -89,12 +94,6 @@ for (i in 4:length(linn)){   # omit first three lines   #for (i in 1:length(linn
         category_product_reformulation = policy_category["Product Reformulation",],
         category_educational_campaign = policy_category["Educational Campaign",],
         category_other = policy_category[ "other",],
-        category_voluntary = policy_category_detail["Voluntary",],
-        category_mandatory = policy_category_detail["Mandatory",],
-        category_task_forces = policy_category_detail["Task forces",],
-        category_studies = policy_category_detail["Studies or reports",],
-        category_pricing = policy_category_detail["Pricing Strategies",],
-        category_incentives = policy_category_detail["Farmer's Market Incentives",],
         age_children = age_group["children",],
         age_elderly = age_group["elderly",],
         organization_school = organization["school",],
@@ -161,6 +160,6 @@ table(table_pdf$organization_restaurant)
 table(table_pdf$organization_public)
 table(table_pdf$organization_hospital)
 
-fwrite(table_pdf, "data/cspi_database_20220613.csv")
+fwrite(table_pdf, "data/policy/cspi_database_20220613.csv")
 
 

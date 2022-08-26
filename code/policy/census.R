@@ -1,3 +1,9 @@
+####################################
+# Preprocess US census to extract state-level demographics 
+# Author: Lingchao Mao
+# Last modified: 8/24/2022
+####################################
+
 library(readr)
 library(dplyr)
 library(ggplot2)
@@ -8,18 +14,15 @@ library(rvest) # https://rvest.tidyverse.org/articles/rvest.html
 
 setwd("/Users/lingchm/Documents/Github/us_sodium_policies")
 
-
-##################
-# Census US
-##################
+########## STATE LEVEL US 
 
 # read in data
-filename <- "data/original/us.1969_2020.singleages.adjusted.txt" #61M
-#filename <- "data/original/us.1969_2020.19ages.adjusted.txt" #15M
+filename <- "data/census/us.1969_2020.singleages.adjusted.txt" #61M
+#filename <- "data/census/us.1969_2020.19ages.adjusted.txt" #15M
 print(paste(round(file.info(filename)$size  / 2^30,3), 'gigabytes'))
-linn2 <- fread(filename)
+#linn2 <- fread(filename)
 conn <- file(filename, open="r")
-#linn <- readLines(conn)
+linn <- readLines(conn)
 
 table_all <- data.frame(year = integer(),
                         state = character(),
@@ -131,9 +134,7 @@ fwrite(table_all, "datacensus_state_year_all.csv")
 
 
 
-##################
-# Census NY
-##################
+########## NY
 
 
 """
@@ -147,15 +148,13 @@ https://guides.newman.baruch.cuny.edu/nyc_data
 
 
 # read in data
-filename <- "data/original/ny.1969_2020.singleages.txt" #61M
-#filename <- "data/original/us.1969_2020.19ages.adjusted.txt" #15M
+filename <- "data/census/ny.1969_2020.singleages.txt" #61M
+#filename <- "data/census/us.1969_2020.19ages.adjusted.txt" #15M
 print(paste(round(file.info(filename)$size  / 2^30,3), 'gigabytes'))
-#linn2 <- fread(filename)
 conn <- file(filename, open="r")
 linn <- readLines(conn)
 
 table_all <- fread("data/datacensus_state_year_all.csv")
-
 
 NY_county_FIPS = c("36005","36047","36061","36081","36085")
 
@@ -163,8 +162,6 @@ table_state_year <- data.frame(race = integer(),
                                age = integer(),
                                sex = integer(), 
                                population = integer())
-
-
 
 prev_year = 1111
 prev_state = "XX"
@@ -263,7 +260,7 @@ table_all <- table_all %>% add_row(year = prev_year,
 
 
 
-# GET 22020 DATA
+# GET 2020 DATA
 table_state_year <- data.frame(race = integer(),
                                age = integer(),
                                sex = integer(), 
