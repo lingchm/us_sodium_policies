@@ -15,15 +15,41 @@ library(usmap)
 library(ggsci)
 library(data.table)
 library(DT)
+library(stringr)
 
-#setwd("/Users/lingchm/Documents/Github/us_sodium_policies/Rshiny")
-table_master <- fread("data/central_database_cleaned_20220824.csv")
-table_master <- fread("data/policy/central_database_cleaned_20220824.csv")
+########### SETUP ###########
+#setwd("/Users/lingchm/Documents/Github/us_sodium_policies/RShiny")
+table_master <- as.data.frame(fread("data/central_database_cleaned_20220824.csv"))
+df_state <- as.data.frame(fread("data/df_state.csv")) 
+df_state_year <- as.data.frame(fread("data/df_state_year.csv")) 
+
+mapping_y = c("Total population"="total_population", 
+            "White race %"="race_white_pct", 
+            "Black race %"="race_black_pct", 
+            "Other race %"="race_other_pct",
+            "Children %"="age_children_pct", 
+            "Elderly %"="age_elderly_pct", 
+            "Female %"="sex_female_pct",
+            "Urbanicity index"="urbanicity_index",
+            "CVD death rate"="cvd_death_rate",
+            "CVD incidence rate"="cvd_incidence_rate",
+            "Median household income"="median_household_income")
+mapping_x = c("Number of efforts"="number_efforts_cat1",
+              "Number of efforts (3 categories)"="number_efforts_cat3",
+              "Number of efforts (6 categories)"="number_efforts_cat5",
+              "Number of pro-children efforts"="number_efforts_children_cat",
+              "Number of pro-elderly efforts"="number_efforts_elderly_cat"
+              #"Number of educational campaign efforts"="number_efforts_educational_campaign",
+              #"Number of institutional campaign efforts"="number_efforts_institutional_procurement",
+              #"Number of nutrition standard efforts"="number_efforts_nutrition_standards",
+              #"Number of product reformulation efforts"="number_efforts_product_reformulation"
+)
 
 # preparation 
 cbp1 <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 PLOT_AXIS_SIZE = 14
 PLOT_AXIS_TITLE_SIZE = 14
+INTERVAL = 5
 # scale_color_brewer(palette = "Dark2")
 # scale_color_npg()
 # scale_color_lancet()
@@ -31,11 +57,13 @@ PLOT_AXIS_TITLE_SIZE = 14
 # define useful functions
 `%notin%` <- Negate(`%in%`)
 
-# Define server logic for the dashboard 
+
+########### SERVER ###########
+
 shinyServer(function(input, output) {
     
   
-    ######SUMMARY STATS 
+    ########### SUMMARY STATS ###########
   
     YEAR_RANGE <- reactive(input$YEAR_RANGE)
 
@@ -79,9 +107,23 @@ shinyServer(function(input, output) {
                         selected = x)
     })
 
+    # observe({
+    #   # when user selects All, removes previously selected regions 
+    #   x <- input$TIMEPLOT_X
+    #   if  (length(x) > 1)  {
+    #     if (x[1] == "USA"){
+    #       x <- x[! x %in% c('USA')]
+    #     } else if ("USA" %in% x){
+    #       x <- "USA"
+    #     }
+    #   } 
+    #   updateSelectInput(session = getDefaultReactiveDomain(),
+    #                     inputId="TIMEPLOT_X", 
+    #                     selected = x)
+    # })
+    
     output$histogram_year <- renderPlot(
         {
-            INTERVAL = 2
             TABLE_TEMP() %>% 
             ggplot(aes(x=effect_year)) + 
             geom_histogram(binwidth=1) + 
@@ -160,12 +202,13 @@ shinyServer(function(input, output) {
     output$table_policy_details <- renderTable(
       {
       count <- colSums(TABLE_TEMP() %>% select("details_voluntary",                 
-                                               "details_mandatory","details_taskforce",                 
-                                                "details_studies",  "details_pricing",                   
+                                               "details_taskforce",                 
+                                                "details_studies",  
+                                               "details_pricing",                   
                                                "details_suggarfat")) 
       df_details_count <- as.data.frame(count)
       df_details_count$pct <- df_details_count$count / nrow(TABLE_TEMP()) * 100
-      df_details_count$category <- c("Voluntary", "Mandatory",
+      df_details_count$category <- c("Voluntary",
                                           "Information-gathering through task forces", 
                                           "Information-gathering through studies or reports", 
                                           "Pricing strategies and incentives", 
@@ -176,7 +219,7 @@ shinyServer(function(input, output) {
     }, digits=0)
     
     
-    ###########  MAP 
+    ########### MAP ###########
     
     YEAR_RANGE_MAP <- reactive(input$YEAR_RANGE_MAP)
     
@@ -209,32 +252,88 @@ shinyServer(function(input, output) {
                theme(legend.position = "right",
                      legend.title = element_text(size=PLOT_AXIS_TITLE_SIZE), #change legend title font size
                      legend.text = element_text(size=PLOT_AXIS_TITLE_SIZE)) #change legend text font size#) 
-         }, height=700) 
+         }, height=550, width=750) 
     
+    ########### BOXPLOTS ###########
+    BOXPLOT_X <- reactive(input$BOXPLOT_X)
+    BOXPLOT_Y <- reactive(input$BOXPLOT_Y)
+
+    output$boxplot_state <- renderPlot({
+      x = BOXPLOT_X()
+      y = BOXPLOT_Y()
+      
+      temp <- df_state %>% filter(state != "USA") %>% select(mapping_x[x], mapping_y[y])
+      if ( mapping_y[y] == "cvd_death_rate" | mapping_y[y] == "cvd_incidence_rate"){
+        temp <- temp <- df_state %>% filter(state != "DC")%>% select(mapping_x[x], mapping_y[y]) 
+      }
+      colnames(temp) <- c("x", "y")
+      ylim <- c(min(temp$y), max(temp$y) + sd(temp$y)*0.5)
+      if (mapping_y[y] == "race_other_pct"){
+        ylim <- c(0, 0.23)
+      } 
+      boundaries <- boxplot(temp$y ~ temp$x, 
+                            main=paste("Relationship between state-level", y,"\n and ", x, delim=""), 
+                            col="#69b3a2",ylim=ylim,xlab=x, ylab=y)
+      text( 
+        x=c(1:nlevels(as.factor(temp$y))), 
+        y= boundaries$stats[nrow(boundaries$stats),] + sd(temp$y)/2,
+        paste("n = ",table(temp$x),sep="")  
+      )
+      
+    },
+    height=500)
     
-    ####### IMAGES 
+    ########### TIMELINE PLOTS ###########
+    TIMEPLOT_X <- reactive(input$TIMEPLOT_X)
+    TIMEPLOT_Y <- reactive(input$TIMEPLOT_Y)
+    
+    output$timeplot_year <- renderPlot({
+      x = TIMEPLOT_X()
+      y = TIMEPLOT_Y()
+      temp <- df_state_year %>% filter(state %in% x) %>% select(year, mapping_y[y], state) 
+      colnames(temp) <- c("x", "y", "location")
+      if (length(x) == 1) {
+        p <- temp %>% 
+          ggplot( aes(x=x, y=y)) +
+          geom_area(fill="#69b3a2", alpha=0.5) +
+          geom_line(color="#69b3a2") +
+          ylab(y) + xlab("year") + theme_light() +
+          ggtitle(paste("Trend of", y, "over time in", x)) +
+          theme(plot.title = element_text(size = PLOT_AXIS_TITLE_SIZE+5,hjust=0.5))
+      } else{
+        p <- temp %>% ggplot( aes(x=x, y=y, group=location, color=location)) +
+          geom_line() +
+          ylab(y) + xlab("year") + theme_light() +
+          ggtitle(paste("Trend of", y, "over time")) +
+          theme(plot.title = element_text(size = PLOT_AXIS_TITLE_SIZE+5,hjust=0.5))
+      }
+      p
+    },
+    height=500)
+    
+    ########### IMAGES ###########
     output$salt_reduction_hypertension <- renderImage({
-        list(src = "Rshiny/images/salt reduction hypertension.png",
+        list(src = "images/salt reduction hypertension.png",
              contentType = 'image/png',
              height = 400,
              alt = "This is alternate text")
         }, deleteFile=FALSE)
     
     output$public_health_need <- renderImage({
-      list(src = "Rshiny/images/public health need.png",
+      list(src = "images/public health need.png",
            contentType = 'image/png',
            height = 400,
            alt = "This is alternate text")
     }, deleteFile=FALSE)
     
     output$contact_us <- renderImage({
-      list(src = "Rshiny/images/contact_us2.png",
+      list(src = "images/contact_us2.png",
            contentType = 'image/png',
            height = 100,
            alt = "This is alternate text")
     }, deleteFile=FALSE)
     
-    ####### OTHERS 
+    ####### OTHERS  ####### 
     output$num_policies <- renderText({
         paste("Total number of policies:", nrow(TABLE_TEMP())) 
         })
@@ -261,6 +360,16 @@ shinyServer(function(input, output) {
         text = "State and Local"
       }
       paste("Map of", text, " Level Sodium Reduction Efforts", delim=" ")
+    })
+    output$hawaii_other_race <- renderText({
+      if (input$BOXPLOT_Y == "Other race %") {
+        text = "Note: State of HI has over 70% of other race, not shown on boxplot."
+      } else if (input$BOXPLOT_Y == "CVD death rate") {
+        text = "Note: CVD age-adjusted death rate per 100,000 total population. CVD death rate of DC was not included."
+      }
+      else {
+        text = ""
+      }
     })
     
 })
