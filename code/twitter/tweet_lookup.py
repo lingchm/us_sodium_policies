@@ -6,7 +6,7 @@ import pandas as pd
 from time import sleep
 import numpy as np
 
-
+BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
 def create_url(lookup_string):
     tweet_fields = "user.fields=id,username"
     expansions = "expansions=author_id"

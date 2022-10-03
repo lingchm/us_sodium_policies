@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from time import sleep
 
+BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
 
 def create_url_followers(user_ids):
     # Specify the usernames that you want to lookup below

@@ -13,18 +13,173 @@ library(readxl)
 
 # load data
 setwd("/Users/lingchm/Documents/Github/us_sodium_policies")
-df_policies <- fread("data/policy/central_database_cleaned_20220824.csv")
-census_state_year <- fread("data/datacensus_state_year_all.csv")
-
-source("code/preprocessing/utils.R")
+df_state <- fread("RShiny/data/df_state.csv")
+df_state_year <- fread("RShiny/data/df_state_year.csv")
 
 
+####################### boxplots #######################
+title = paste("Relationship between state-level white race percentage \n and number of policies") # (N=",nrow(df_state),")", delim="")
+plot(df_state$race_white_pct, df_state$number_policies)
+boundaries <- boxplot(df_state$race_white_pct ~ df_state$number_policies_cat, 
+                      main=title,
+                      col="#69b3a2",
+                      ylim=c(0.2, 1.1 ),
+                      xlab="Total number of policies",
+                      ylab="White race %")
+nbGroup <- nlevels(as.factor(df_state$number_policies_cat))
+text( 
+  x=c(1:nbGroup), 
+  y= boundaries$stats[nrow(boundaries$stats),] + 0.1,
+  paste("n = ",table(df_state$number_policies_cat),sep="")  
+)
 
-# filter out national ones for now
+title = paste("Relationship between state-level percentage of other race\n and number of policies") # (N=",nrow(df_state),")", delim="")
+#plot(df_state$race_other_pct, df_state$number_policies)
+boundaries <- boxplot(df_state$race_other_pct ~ df_state$number_policies_cat, 
+                      main=title,
+                      col="#69b3a2",
+                      ylim=c(0., 0.25),
+                      xlab="Total number of policies",
+                      ylab="Other race %")
+nbGroup <- nlevels(as.factor(df_state$number_policies_cat))
+text( 
+  x=c(1:nbGroup), 
+  y= boundaries$stats[nrow(boundaries$stats),] + 0.1,
+  paste("n = ",table(df_state$number_policies_cat),sep="")  
+)
+
+
+title = paste("Relationship between state-level percentage of black race\n and number of policies") # (N=",nrow(df_state),")", delim="")
+#plot(df_state$race_other_pct, df_state$number_policies)
+boundaries <- boxplot(df_state$race_black_pct ~ df_state$number_policies_cat, 
+                      main=title,
+                      col="#69b3a2",
+                      ylim=c(0., 0.5),
+                      xlab="Total number of policies",
+                      ylab="Black race %")
+nbGroup <- nlevels(as.factor(df_state$number_policies_cat))
+text( 
+  x=c(1:nbGroup), 
+  y= boundaries$stats[nrow(boundaries$stats),] + 0.1,
+  paste("n = ",table(df_state$number_policies_cat),sep="")  
+)
+
+title = paste("Relationship between state-level percentage of female sex\n and number of policies") # (N=",nrow(df_state),")", delim="")
+#plot(df_state$race_other_pct, df_state$number_policies)
+boundaries <- boxplot(df_state$sex_female_pct ~ df_state$number_policies_cat, 
+                      main=title,
+                      col="#69b3a2",
+                      ylim=c(0.47, 0.55),
+                      xlab="Total number of policies",
+                      ylab="Female sex %")
+nbGroup <- nlevels(as.factor(df_state$number_policies_cat))
+text( 
+  x=c(1:nbGroup), 
+  y= boundaries$stats[nrow(boundaries$stats),] + 0.01,
+  paste("n = ",table(df_state$number_policies_cat),sep="")  
+)
+
+
+title = paste("Relationship between state-level population\n and number of policies") # (N=",nrow(df_state),")", delim="")
+#plot(df_state$race_other_pct, df_state$number_policies)
+boundaries <- boxplot(df_state$total_population ~ df_state$number_policies_cat, 
+                      main=title,
+                      col="#69b3a2",
+                      ylim=c(0., 4*1e7),
+                      xlab="Total number of policies",
+                      ylab="Total population")
+nbGroup <- nlevels(as.factor(df_state$number_policies_cat))
+text( 
+  x=c(1:nbGroup), 
+  y= boundaries$stats[nrow(boundaries$stats),] + 0.3*1e7,
+  paste("n = ",table(df_state$number_policies_cat),sep="")  
+)
+
+
+####################### timeline plots #######################
+library(plotly)
+df_state_year$year <- as.Date(df_state_year$year)
+
+p <- df_state_year %>% 
+  filter(state=="CA" | state=="NC") %>%
+  ggplot( aes(x=year, group=state, y=median_household_income)) +
+  geom_area(fill="#69b3a2", alpha=0.5) +
+  geom_line(color="#69b3a2") +
+  xlim(c(1969, 2020)) + 
+  ylab("total population") + theme_light() 
+p <- ggplotly(p)
+
+p
+
+
+####################### Panel Regression ####################### 
+library(foreign)
+library(car)
+library(gplots)
+df_state_year <- df_state_year %>% 
+  filter(state != "USA" & state != "NYC" & state != "KR") %>%
+  filter(year >= 2000 & year < 2019)
+
+unique(df_state_year$state)
+unique(df_state_year$year)
+
+coplot(number_efforts ~ year | state, type="l", data=df_state_year) # lines
+coplot(number_efforts ~ year | state, type="b", data=df_state_year) # points and lines
+coplot(total_population ~ year | state, type="l", data=df_state_year) # lines
+scatterplot(total_population~year|state, boxplots=FALSE, 
+            smooth=TRUE, reg.line=FALSE, data=df_state_year)
+
+# analysis 
+coplot(number_efforts ~ cvd_death_rate | race_other_pct*total_population, 
+       type="p", data=df_state_year) # lines
+coplot(number_efforts ~ cvd_incidence_rate | race_other_pct*total_population, 
+       type="p", data=df_state_year) # lines
+
+# fixed effects: heterogeneity across states
+plotmeans(number_efforts ~ state, 
+          n.label=FALSE, connect=FALSE, data=df_state_year,
+          main="Heterogeneity across states (n=20)",
+          ylab="average number of efforts per year")
+# fixed effects: heterogeneity across years
+plotmeans(number_efforts ~ year, 
+          n.label=FALSE, connect=FALSE, data=df_state_year,
+          main="Heterogeneity across years (n=51)",
+          ylab="average number of efforts per state")
+# fixed effects using state as dummy variable
+fixed.dum <-lm(number_efforts ~ cvd_incidence_rate + factor(state)-1, 
+               data=df_state_year)
+summary(fixed.dum)
+fixed.dum <-lm(number_efforts ~ cvd_death_rate + factor(state)-1, 
+               data=df_state_year)
+summary(fixed.dum)
+fixed.dum <-lm(number_efforts_cat1 ~ median_household_income + factor(state)-1, 
+               data=df_state_year)
+summary(fixed.dum)
+fixed.dum <-lm(number_efforts_cat1 ~ urbanicity_index + factor(state)-1, 
+               data=df_state_year)
+summary(fixed.dum)
+fixed.dum <-lm(number_efforts_cat1 ~ race_other_pct + factor(state)-1, 
+               data=df_state_year)
+summary(fixed.dum)
+
+fixed.dum <-lm(number_efforts_cat1 ~ age_children_pct + factor(state)-1, 
+               data=df_state_year)
+summary(fixed.dum)
+
+phtest(fixed, random) # if p < 0.05 then use fixed effects
+
+
+
+####################
 START_YEAR = 2000
-END_YEAR = 2022
-census_state_year <- census_state_year %>% filter(state %in% c(state.abb, "NYC", "DC"))
-census_state_year <- census_state_year %>% filter(year >= START_YEAR, year <= END_YEAR)
+END_YEAR = 2020
+STATES <- unique(df_policies$state)
+
+
+
+  census_state_year <- census_state_year %>% 
+  filter(state %in% c(state.abb, "NYC", "DC")) %>% 
+  filter(year >= START_YEAR, year <= END_YEAR)
 unique(census_state_year$state)
 t <- census_state_year %>% group_by(state) %>% summarize(count=n())
 t <- census_state_year %>% filter(state=="NYC")
@@ -32,7 +187,7 @@ t <- census_state_year %>% filter(state=="NY")
 t <- census_state_year %>% filter(state=="WY")
 52 * 21
 
-df_policies <- df_policies %>% filter(level != "national")
+df_policies <- df_policies %>% filter(level == "state")
 df_policies <- df_policies %>% filter(effect_year_from >= 1)
 df_policies <- df_policies %>% filter(effect_year_from >= START_YEAR,
                                       effect_year_from <= END_YEAR)

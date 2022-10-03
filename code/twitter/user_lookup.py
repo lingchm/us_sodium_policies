@@ -8,7 +8,7 @@ import numpy as np
 # To set your enviornment variables in your terminal run the following line:
 # export 'BEARER_TOKEN'='<your_bearer_token>'
 
-
+BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
 def create_url(usernames, user_fields = "user.fields=id,username"):
     # Specify the usernames that you want to lookup below
     # You can enter up to 100 comma-separated values.
