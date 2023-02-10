@@ -12,9 +12,9 @@ library(shinyWidgets)
 
 # load data
 #setwd("/Users/lingchm/Documents/Github/us_sodium_policies/Rshiny")
-table_master <- fread("data/central_database_cleaned_20220824.csv")
-df_state <- as.data.frame(fread("data/df_state.csv")) 
-df_state_year <- as.data.frame(fread("data/df_state_year.csv")) 
+table_master <- as.data.frame(fread("data/central_database_cleaned_20220824.csv"))
+df_state <- as.data.frame(fread("data/df_state_20220921.csv")) 
+df_state_year <- as.data.frame(fread("data/df_state_year_20220916.csv")) 
 
 mapping_y = c("Total population"="total_population", 
               "White race %"="race_white_pct", 
@@ -217,6 +217,7 @@ shinyUI(fluidPage(
                  fluidRow(
                  column(3,
                         h4("Overview"),
+                        textOutput("last_updated"),
                         textOutput("num_policies"),
                         textOutput("num_states"),
                         hr(),
@@ -234,7 +235,7 @@ shinyUI(fluidPage(
                             h6("Type:"),
                             splitLayout(
                                     checkboxInput('LAWS', 'Laws', value=TRUE),
-                                    checkboxInput('RULES', 'Adminitrative Rules', value=TRUE)
+                                    checkboxInput('RULES', 'Administrative Rules', value=TRUE)
                             ),
                             h6("Level:"),
                             splitLayout(
@@ -261,6 +262,7 @@ shinyUI(fluidPage(
                  fluidRow(
                      column(3,
                             h4("Overview"),
+                            textOutput("last_updated"),
                             textOutput("num_policies_map"),
                             textOutput("num_policies_nacional_map"),
                             textOutput("num_policies_state_map"),
@@ -274,7 +276,7 @@ shinyUI(fluidPage(
                             h6("Type:"),
                             splitLayout(
                                 checkboxInput('LAWS_MAP', 'Laws', value=TRUE),
-                                checkboxInput('RULES_MAP', 'Adminitrative Rules', value=TRUE)
+                                checkboxInput('RULES_MAP', 'Administrative Rules', value=TRUE)
                             ),
                             hr(),
                             h4("Map View"),

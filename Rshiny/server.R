@@ -20,8 +20,8 @@ library(stringr)
 ########### SETUP ###########
 #setwd("/Users/lingchm/Documents/Github/us_sodium_policies/RShiny")
 table_master <- as.data.frame(fread("data/central_database_cleaned_20220824.csv"))
-df_state <- as.data.frame(fread("data/df_state.csv")) 
-df_state_year <- as.data.frame(fread("data/df_state_year.csv")) 
+df_state <- as.data.frame(fread("data/df_state_20220921.csv")) 
+df_state_year <- as.data.frame(fread("data/df_state_year_20220916.csv")) 
 
 mapping_y = c("Total population"="total_population", 
             "White race %"="race_white_pct", 
@@ -135,20 +135,19 @@ shinyServer(function(input, output) {
  
     output$histogram_policy_category <- renderPlot(
       {
-        count <- colSums(TABLE_TEMP() %>% select("category_nutrition_labeling","category_nutrition_standards",
-                                                 "category_institutional_procurement","category_educational_campaign", 
-                                                 "category_product_reformulation","category_other" )) 
-                                            
+        count <- colSums(TABLE_TEMP() %>% select("category_nutrition_labeling","category_institutional_procurement",
+                                                 "category_educational_campaign", 
+                                                 "category_product_reformulation","category_other_who" )) 
+        
         df_policy_count <- as.data.frame(count)
-        df_policy_count$pct <- df_policy_count$count / sum(df_policy_count$count)
-        df_policy_count$category <- c("Nutrition \nlabeling","Nution \nstandards",
-                                      "Institutional \nprocurement",  "Educational \ncampaign",
-                                      "Product \nreformulation","Other")
+        df_policy_count$pct <- df_policy_count$count / nrow(TABLE_TEMP())
+        df_policy_count$category <- c("Nutrition \nlabeling","Institutional \nprocurement",  
+                                      "Educational \ncampaign","Product \nreformulation","Other")
         ggplot(data=df_policy_count, aes(x=category, y=count, label = scales::percent(pct))) +
           geom_bar(stat="identity") + 
           geom_col(position = 'dodge') + 
           geom_text(position = position_dodge(width = .9),  vjust = -0.5,  size = 4) + 
-          ylab("Number of efforts") + xlab("Policy Category") + ylim(0, max(df_policy_count$count) + 50) + 
+          ylab("Number of efforts") + xlab("Policy Category (WHO 'Best-buys')") + ylim(0, max(df_policy_count$count) + 50) + 
           theme_light() + scale_fill_npg() + theme(axis.text=element_text(size=PLOT_AXIS_SIZE),
                                                    axis.title=element_text(size=PLOT_AXIS_TITLE_SIZE)) +
           scale_x_discrete(limits = df_policy_count$category) 
@@ -334,6 +333,9 @@ shinyServer(function(input, output) {
     }, deleteFile=FALSE)
     
     ####### OTHERS  ####### 
+    output$last_updated <- renderText({
+      paste("Data last updated:", "8/24/2022") 
+    })
     output$num_policies <- renderText({
         paste("Total number of policies:", nrow(TABLE_TEMP())) 
         })
