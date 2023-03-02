@@ -12,13 +12,13 @@ from time import sleep
 import numpy as np
 os.chdir("/Users/lingchm/Documents/Github/us_sodium_policies/code/twitter")
 
-import tweet_lookup
-import user_follower
-import user_lookup
-import full_archive_search
+from utils import tweet_lookup 
+from utils import user_follower
+from utils import user_lookup 
+from utils import full_archive_search 
 
 BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
-
+EXPORT_FOLDER = os.environ.get("EXPORT_FOLDER")
 
 # collect one data of all users 
 usernames = {"Public agencies": {"FDA": ["US_FDA", 'FDAfood'],
@@ -119,15 +119,11 @@ print("total accounts:", len(usernames_list))
 print("total organizations:", len(organization_list))
 print("total accounts:", len(usernames_list))
 
-  
-folder = "/Users/lingchm/Documents/Github/us_sodium_policies/data/twitter/"
-
-'''
     
 for username in usernames_list:
     
     # full archive search
-    export_file = folder + "original/user_" + username+'.csv'
+    export_file = EXPORT_FOLDER + "/original/user_" + username+'.csv'
     
     if os.path.isfile(export_file):
         print("Skipping for", username)
@@ -156,14 +152,20 @@ for username in usernames_list:
     print("Getting full archive tweets for: " + username)
     full_archive_search.get_tweets_by_user(username, query_params, export_file)
     
-    ## get reply username 
-    user_lookup.get_reply_username(username, folder)
+    ## get reply username
+    print("Getting reply usernames for ", username)
+    user_lookup.get_reply_username(EXPORT_FOLDER + "original/user_" + username + ".csv", 
+                                   EXPORT_FOLDER + "wreply/user_" + username+'.csv')
     
     ## Get reference tweets 
-    tweet_lookup.get_reference_tweet_id(username, folder)
+    print("Getting reference tweets for ", username)
+    tweet_lookup.get_reference_tweet_id(EXPORT_FOLDER + "wreply/user_" + username + ".csv",
+                                        EXPORT_FOLDER + "wreference/user_"+username+'.csv')
         
-    ## get reply username 
-    user_lookup.get_reference_username(username, folder)
+    ## get reply username
+    print("Getting reference usernames for ", username)
+    user_lookup.get_reference_username(EXPORT_FOLDER + "wreference/user_" + username + ".csv",
+                                       EXPORT_FOLDER + "wreferencename/user_" + username + '.csv')
     
     ## get list of follower names
     #data = pd.read_csv(folder + "original/user_" + username + ".csv")
@@ -173,8 +175,7 @@ for username in usernames_list:
     sleep(5)
     
 
-
-
+###########
 # get follower and friend counts 
 query_params = {
                 'user.fields': "id,name,username,public_metrics,location,created_at"
@@ -200,107 +201,5 @@ for username in usernames_list:
 
 public_metrics_all.index.name = "username"
 public_metrics_all['year'] = pd.DatetimeIndex(public_metrics_all['created_at']).year
-public_metrics_all.to_csv(folder + "followers/user_summary_metrics2.csv")
+public_metrics_all.to_csv(EXPORT_FOLDER + "followers/user_summary_metrics2.csv")
 
-    
-'''   
-
- 
-'''
-Contain keywords "sodium", "salt", ("salty", "salts", "salted") & 
-("food", "diet*", "health*", "eat*", "meal*", "intake")​
-'''
-
-# https://developer.twitter.com/en/docs/twitter-api/enterprise/search-api/guides/operators
-
-folder = "/Users/lingchm/Documents/Github/us_sodium_policies/data/twitter/sodium/"    
-
-username = "sodium_20210101-20211231_unverified"   
-''' 
-export_file = folder + username + ".csv"
-query_params = {'query':"sodium lang:en", # is:verified
-                'start_time': '2021-01-01T00:00:00Z', #'2006-07-01T00:00:00Z',
-                'end_time': '2022-01-01T00:00:00Z',
-                'max_results': "500",
-                'sort_order':'recency',
-                'expansions':'author_id,geo.place_id', #'in_reply_to_user_id,entities.mentions.username,referenced_tweets.id.author_id
-                'place.fields':'contained_within,country,country_code,full_name,geo,id,name,place_type',
-                'tweet.fields':'author_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,referenced_tweets,text',
-                'user.fields':'created_at,description,id,name,username',
-                'next_token': None
-                }
-print("Getting full archive tweets for: " + username)
-full_archive_search.get_tweets_by_user(username, query_params, export_file)
-       
-    
-
-'''    
-username = "salt_20210101-20211231_unverified"   
-export_file = folder + username + ".csv"
-query_params = {'query':"salt lang:en",
-                'start_time': '2021-01-01T00:00:00Z', #'2006-07-01T00:00:00Z',
-                'end_time': '2022-01-01T00:00:00Z',
-                'max_results': "500",
-                'sort_order':'recency',
-                'expansions':'author_id,geo.place_id', #'in_reply_to_user_id,entities.mentions.username,referenced_tweets.id.author_id
-                'place.fields':'contained_within,country,country_code,full_name,geo,id,name,place_type',
-                'tweet.fields':'author_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,referenced_tweets,text',
-                'user.fields':'created_at,description,id,name,username',
-                'next_token': None
-                }
-print("Getting full archive tweets for: " + username)
-full_archive_search.get_tweets_by_user(username, query_params, export_file)
-
-    
-username = "salts_20210101-20211231_unverified"   
-export_file = folder + username + ".csv"
-query_params = {'query':'salts lang:en',
-                'start_time': '2021-01-01T00:00:00Z', #'2006-07-01T00:00:00Z',
-                'end_time': '2022-01-01T00:00:00Z',
-                'max_results': "500",
-                'sort_order':'recency',
-                'expansions':'author_id,geo.place_id', #'in_reply_to_user_id,entities.mentions.username,referenced_tweets.id.author_id
-                'place.fields':'contained_within,country,country_code,full_name,geo,id,name,place_type',
-                'tweet.fields':'author_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,referenced_tweets,text',
-                'user.fields':'created_at,description,id,name,username',
-                'next_token': None
-                }
-print("Getting full archive tweets for: " + username)
-full_archive_search.get_tweets_by_user(username, query_params, export_file)
-
-username = "salted_20210101-20211231_unverified"   
-export_file = folder + username + ".csv"
-query_params = {'query':'salted lang:en',
-                'start_time': '2021-01-01T00:00:00Z', #'2006-07-01T00:00:00Z',
-                'end_time': '2022-01-01T00:00:00Z',
-                'max_results': "500",
-                'sort_order':'recency',
-                'expansions':'author_id,geo.place_id', #'in_reply_to_user_id,entities.mentions.username,referenced_tweets.id.author_id
-                'place.fields':'contained_within,country,country_code,full_name,geo,id,name,place_type',
-                'tweet.fields':'author_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,referenced_tweets,text',
-                'user.fields':'created_at,description,id,name,username',
-                'next_token': None
-                }
-print("Getting full archive tweets for: " + username)
-full_archive_search.get_tweets_by_user(username, query_params, export_file)
-
-username = "salty_20210101-20211231_unverified"   
-export_file = folder + username + ".csv"
-query_params = {'query':'salty lang:en',
-                'start_time': '2021-01-01T00:00:00Z', #'2006-07-01T00:00:00Z',
-                'end_time': '2022-01-01T00:00:00Z',
-                'max_results': "500",
-                'sort_order':'recency',
-                'expansions':'author_id,geo.place_id', #'in_reply_to_user_id,entities.mentions.username,referenced_tweets.id.author_id
-                'place.fields':'contained_within,country,country_code,full_name,geo,id,name,place_type',
-                'tweet.fields':'author_id,created_at,entities,geo,id,in_reply_to_user_id,lang,public_metrics,referenced_tweets,text',
-                'user.fields':'created_at,description,id,name,username',
-                'next_token': None
-                }
-print("Getting full archive tweets for: " + username)
-full_archive_search.get_tweets_by_user(username, query_params, export_file)
-   
-    
-    
-    
-        

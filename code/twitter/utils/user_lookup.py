@@ -4,6 +4,7 @@ import os
 import json
 import pandas as pd
 import numpy as np
+from time import sleep
 
 # To set your enviornment variables in your terminal run the following line:
 # export 'BEARER_TOKEN'='<your_bearer_token>'
@@ -59,10 +60,9 @@ def get_user_username(usernames):
     return json_response
 
 
-def get_reply_username(username, folder):
-    print("Getting reply usernames for ", username)
-    data = pd.read_csv(folder + "original/user_" + username + ".csv")
-    export_file = folder + "wreply/user_"+username+'.csv'
+def get_reply_username(input_file, export_file):
+
+    data = pd.read_csv(input_file)
     N  = data.shape[0]
         
      # remove na id
@@ -76,10 +76,13 @@ def get_reply_username(username, folder):
     data_ids = pd.DataFrame(columns=["reply_username"], index=reference_ids)
     l = 0
     while l < reference_ids.shape[0]:
-        json_response = get_user_username(reference_ids[l:(l+100)])
-        for user_data in json_response['data']:
-            data_ids.loc[str(user_data['id']), "reply_username"] = user_data['username']
-        l += 100
+        try:
+            json_response = get_user_username(reference_ids[l:(l+100)])
+            for user_data in json_response['data']:
+                data_ids.loc[str(user_data['id']), "reply_username"] = user_data['username']
+            l += 100
+        except:
+            sleep(10)
         
     data_ids['reply'] = data_ids.index.astype(float)
     data_final = data.merge(data_ids, how="left", on=["reply"])
@@ -89,16 +92,14 @@ def get_reply_username(username, folder):
     # data_final[~data_final['reply'].isnull()][['reply', 'reply_username']]
     data_final.to_csv(export_file, index=False)
         
-    assert data_final.shape[0] == N, "Error check number of rows" + username
+    assert data_final.shape[0] == N, "Error check number of rows"
 
     return 
 
 
-def get_reference_username(username, folder):
+def get_reference_username(input_file, export_file):
     
-    print("Getting reference usernames for ", username)
-    export_file = folder + "wreferencename/user_"+username+'.csv'
-    data = pd.read_csv(folder + "wreference/user_" + username + ".csv")
+    data = pd.read_csv(input_file)
     
     # remove na id
     # sometimes in_reply_to_user_id has mixed in conversation or tweet ids, remove
@@ -113,12 +114,15 @@ def get_reference_username(username, folder):
     data_ids = pd.DataFrame(columns=["reference_username"], index=unique_reference_ids)
     l, k = 0, 0
     while l < len(unique_reference_ids):
-        json_response = get_user_username(unique_reference_ids[l:(l+100)])
-        for user_data in json_response['data']:
-            data_ids.loc[str(user_data['id']), "reference_username"] = user_data['username']
-        l += 100
-        k += 1
-        print("     Request", k, " Tweet", l)
+        try:
+            json_response = get_user_username(unique_reference_ids[l:(l+100)])
+            for user_data in json_response['data']:
+                data_ids.loc[str(user_data['id']), "reference_username"] = user_data['username']
+            l += 100
+            k += 1
+            print("     Request", k, " Tweet", l)
+        except:
+            sleep(10)
         
     # clean list of reference ids 
     reference_ids = []
@@ -151,6 +155,39 @@ def get_reference_username(username, folder):
     data["reference_usernames"] = reference_usernames
     # data_final[~data_final['reply'].isnull()][['reply', 'reply_username']]
     data.to_csv(export_file, index=False)
+
+    return
+
+        
+
+def get_username(input_file, export_file):
+    
+    data = pd.read_csv(input_file)
+    
+    data['author_id'] = data['author_id'].astype(int).astype(str)
+    unique_ids = np.unique(data[~data['author_id'].isnull()]['author_id']).tolist()
+    print("Number of author ids:", len(unique_ids))
+
+    data_ids = pd.DataFrame(columns=["author_username"], index=unique_ids)
+    l, k = 0, 0
+    while l < len(unique_ids):
+        try:
+            json_response = get_user_username(unique_ids[l:(l+100)])
+            for user_data in json_response['data']:
+                data_ids.loc[str(user_data['id']), "author_username"] = user_data['username']
+            l += 100
+            k += 1
+            print("     Request", k, " Tweet", l)
+        except:
+            sleep(10)
+        
+    data_ids['author_id'] = data_ids.index.astype(str)
+    data_final = data.merge(data_ids, how="left", on=["author_id"])
+    print("     Total of user ids:", len(unique_ids))
+    print("     Total reply usernames: ", len(data_final['author_username'].unique()))
+    data_final.to_csv(export_file, index=False)
+        
+    assert data_final.shape[0] == data.shape[0], "Error check number of rows"
 
     return
 

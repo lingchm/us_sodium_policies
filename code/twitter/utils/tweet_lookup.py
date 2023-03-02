@@ -59,11 +59,9 @@ def get_tweet_username(tweet_ids):
 
     return json_response
 
-def get_reference_tweet_id(username, folder):
+def get_reference_tweet_id(input_file, export_file):
     
-    print("Getting reference tweets for ", username)
-    data = pd.read_csv(folder + "wreply/user_" + username + ".csv")
-    export_file = folder + "wreference/user_"+username+'.csv'
+    data = pd.read_csv(input_file)
     
     # clean list of reference ids 
     reference_ids = []
@@ -85,14 +83,16 @@ def get_reference_tweet_id(username, folder):
     data_ids = pd.DataFrame(columns=["reference_text","reference_userid"], index=unique_reference_ids)
     l, k = 0, 0
     while l < len(unique_reference_ids):
-        json_response = get_tweet_username(unique_reference_ids[l:(l+100)])
-        for tweet_data in json_response['data']:
-            data_ids.loc[str(tweet_data['id']), "reference_text"] = tweet_data['text']
-            data_ids.loc[str(tweet_data['id']), "reference_userid"] = tweet_data['author_id']
-        l += 100
-        k += 1
-        print("     Request", k, " Tweet", l)
-        sleep(5)
+        try:
+            json_response = get_tweet_username(unique_reference_ids[l:(l+100)])
+            for tweet_data in json_response['data']:
+                data_ids.loc[str(tweet_data['id']), "reference_text"] = tweet_data['text']
+                data_ids.loc[str(tweet_data['id']), "reference_userid"] = tweet_data['author_id']
+            l += 100
+            k += 1
+            print("     Request", k, " Tweet", l)
+        except:
+            sleep(10)
 
     reference_usernames = []
     data_ids = data_ids[~data_ids['reference_userid'].isnull()]

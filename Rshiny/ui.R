@@ -47,6 +47,7 @@ MAX_YEAR <- max(table_master$effect_year, na.rm=TRUE)
 # define dashboard 
 
 shinyUI(fluidPage(
+    useShinydashboard(),
 
     # Application title
     titlePanel("Sodium Reduction Laws and Administrative Rules in the U.S."),
@@ -217,7 +218,7 @@ shinyUI(fluidPage(
                  fluidRow(
                  column(3,
                         h4("Overview"),
-                        textOutput("last_updated"),
+                        #textOutput("last_updated"),
                         textOutput("num_policies"),
                         textOutput("num_states"),
                         hr(),
@@ -241,8 +242,21 @@ shinyUI(fluidPage(
                             splitLayout(
                                     checkboxInput('NATIONAL', 'National', value=TRUE),
                                     checkboxInput('STATE', 'State', value=TRUE),
-                                    checkboxInput('LOCAL', 'Local', value=TRUE)
-                            )
+                                    checkboxInput('LOCAL', 'Local', value=FALSE)
+                            ),
+                            #h6("Policy category:"),
+                            selectInput(
+                                "POLICY_CATEGORY", "Policy category:",
+                                choices = c('All','Institutional Procurement','Nutrition Labeling',
+                                            'Educational Campaign','Product Reformulation','Other'),
+                                selected = "All",
+                                multiple = FALSE
+                            ),
+                            # checkboxInput('INSTITUTIONAL', 'Institutional Procurement', value=TRUE),
+                            # checkboxInput('NUTRITION', 'Nutrition Labeling', value=TRUE),
+                            # checkboxInput('EDUCATIONAL', 'Educational Campaign', value=TRUE),
+                            # checkboxInput('PRODUCT', 'Product Reformulation', value=TRUE),
+                            # checkboxInput('OTHER', 'Other', value=TRUE)
                      ),
                  column(7,
                     tabsetPanel(
@@ -262,7 +276,7 @@ shinyUI(fluidPage(
                  fluidRow(
                      column(3,
                             h4("Overview"),
-                            textOutput("last_updated"),
+                            #textOutput("last_updated"),
                             textOutput("num_policies_map"),
                             textOutput("num_policies_nacional_map"),
                             textOutput("num_policies_state_map"),

@@ -36,12 +36,18 @@ def connect_to_endpoint(params):
 
 
 def jason_to_df(json_response):
-    tweets = pd.DataFrame(columns=['author_id','username','id','created_at','lang','text','retweet_count','reply_count','like_count', 
-                                   'quote_count','source', 'mentions', 'hashtags','reply','references','retweet','contain_sodium','contain_health'])
+    tweets = pd.DataFrame(columns=['author_id',#'name','username','user_location','user_created_at',
+        'id','created_at',#'country_code', 'location', 'geo_bbox',
+        'lang','text',
+        'retweet_count','reply_count','like_count', 'quote_count','impression_count',
+        'conversation_id','source', 'mentions', 'hashtags','reply','references', 'urls', 'retweet',
+        #'media_key', 'media_type', 'media_url', 'media_height', 'media_width', 'media_view_count'
+        ])
+    
+    #print(len(json_response['data']), len(json_response['includes']['media']), len(json_response['includes']['users']), len(json_response['includes']['places']))
     
     for i in range(len(json_response['data'])):
-        
-        mentions, hashtags, references, reply, source = [], [], [], None, None
+        mentions, hashtags, references, urls = [], [], [], []
         if 'entities' in json_response['data'][i].keys():
             if 'mentions' in json_response['data'][i]['entities'].keys():
                 for mention in json_response['data'][i]['entities']['mentions']:
@@ -49,29 +55,54 @@ def jason_to_df(json_response):
             if 'hashtags' in json_response['data'][i]['entities'].keys():
                 for hashtag in json_response['data'][i]['entities']['hashtags']:
                     hashtags.append(hashtag['tag'])
+            if 'urls' in json_response['data'][i]['entities'].keys():
+                for url in json_response['data'][i]['entities']['urls']:
+                    urls.append(url['expanded_url'])
+        reply, source, conversation = None, None, None
         if "in_reply_to_user_id" in json_response['data'][i].keys():
             reply = json_response['data'][i]['in_reply_to_user_id']
         if "source" in json_response['data'][i].keys():
             source = json_response['data'][i]['source']
+        if "conversation_id" in json_response['data'][i].keys():
+            conversation = json_response['data'][i]['conversation_id']
         # Reference: want to involve all entities involved, but using in_reply_to_user_id only creates a list that do not match the order of 'data' list
         if 'referenced_tweets' in json_response['data'][i].keys():
             for j in range(len(json_response['data'][i]['referenced_tweets'])):
                 references.append(json_response['data'][i]['referenced_tweets'][j]['id'])
+        '''
+        media_key, media_type, media_url, media_height, media_width, media_view_count = None, None, None, None, None, None
+        try:
+            media_key = json_response['includes']['media'][i]['media_key']
+            media_type = json_response['includes']['media'][i]['type']
+            media_url = json_response['includes']['media'][i]['url']
+            media_height = json_response['includes']['media'][i]['height']
+            media_width = json_response['includes']['media'][i]['width']
+            media_view_count = json_response['includes']['media'][i]['public_metrics']['view_count']
+        except:
+            pass 
+        '''
         retweet = 1 if json_response['data'][i]['text'][:2] == "RT" else 0
-        contain_sodium = 1 if ("sodium" in json_response['data'][i]['text']) or ("salt" in json_response['data'][i]['text']) else 0
-        contain_health = 1 if ("health" in json_response['data'][i]['text']) else 0
         tweets.loc[len(tweets.index)] = [json_response['data'][i]['author_id'],
-                                         json_response['includes']['users'][0]['username'],
-                                         json_response['data'][i]['id'],
+                                         #json_response['includes']['users'][i]['name'],
+                                         #json_response['includes']['users'][i]['username'],
+                                         #json_response['includes']['users'][i]['location'],
+                                         #json_response['includes']['users'][i]['created_at'],
+                                         str(json_response['data'][i]['id']),
                                          json_response['data'][i]['created_at'],
+                                         #json_response['includes']['places'][i]['country_code'],
+                                         #json_response['includes']['places'][i]['full_name'],
+                                         #json_response['includes']['places'][i]['geo']['bbox'],
                                          json_response['data'][i]['lang'],
                                         json_response['data'][i]['text'],
                                         json_response['data'][i]['public_metrics']['retweet_count'],
                                         json_response['data'][i]['public_metrics']['reply_count'],
                                         json_response['data'][i]['public_metrics']['like_count'],
                                         json_response['data'][i]['public_metrics']['quote_count'],
-                                        source, mentions, hashtags, reply, references,
-                                        retweet, contain_sodium, contain_health]
+                                        json_response['data'][i]['public_metrics']['impression_count'],
+                                        conversation,source, mentions, hashtags, reply, references, urls, retweet
+                                        #media_key, media_type, media_url, media_height, media_width, media_view_count
+                                        
+                                        ]
         
     return tweets
     
@@ -90,7 +121,7 @@ def get_tweets_by_user(username, query_params, export_file):
     tweets.to_csv(export_file)
 
     while "next_token" in json_response["meta"].keys():
-        sleep(3)
+        sleep(5)
         query_params["next_token"] = json_response["meta"]["next_token"]
         # in case not all are processed 
         try:

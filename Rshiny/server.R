@@ -4,14 +4,14 @@
 # Last modified: 8/24/2022
 ####################################
 
-# install.packages("devtools")
-# devtools::install_github("debruine/shinyintro")
+#install.packages("devtools", type="binary")
+#devtools::install_github("debruine/shinyintro")
 library(shiny)
 library(readr)
 library(dplyr)
 library(ggplot2)
 library(usmap)
-#library(knitr)
+library(knitr)
 library(ggsci)
 library(data.table)
 library(DT)
@@ -88,6 +88,34 @@ shinyServer(function(input, output) {
       if (input$RULES == FALSE) {
         table_temp <- table_temp %>% filter(policy_type_simple != "Administrative Rule")
       }
+      
+      if (input$POLICY_CATEGORY == "Institutional Procurement") {
+           table_temp <- table_temp %>% filter(category_institutional_procurement > 0)
+      } else if (input$POLICY_CATEGORY == 'Nutrition Labeling') {
+          table_temp <- table_temp %>% filter(category_nutrition_labeling > 0)
+      } else if (input$POLICY_CATEGORY == 'Educational Campaign') {
+          table_temp <- table_temp %>% filter(category_educational_campaign > 0)
+      } else if (input$POLICY_CATEGORY == 'Product Reformulation') {
+          table_temp <- table_temp %>% filter(category_product_reformulation > 0)
+      } else if (input$POLICY_CATEGORY == 'Other') {
+        table_temp <- table_temp %>% filter(category_other > 0)
+      }
+        
+      # if (input$POLICY_CATEGORY == FALSE) {
+      #   table_temp <- table_temp %>% filter(category_educational_campaign ==0)
+      # }
+      # if (input$PRODUCT == FALSE) {
+      #   table_temp <- table_temp %>% filter(category_product_reformulation ==0)
+      # }
+      # if (input$INSTITUTIONAL == FALSE) {
+      #   table_temp <- table_temp %>% filter(category_institutional_procurement ==0)
+      # }
+      # if (input$NUTRITION == FALSE) {
+      #   table_temp <- table_temp %>% filter(category_nutrition_labeling ==0)
+      # }
+      # if (input$OTHER == FALSE) {
+      #   table_temp <- table_temp %>% filter(category_other ==0)
+      # }
       return(table_temp)
     }
     )
@@ -106,6 +134,7 @@ shinyServer(function(input, output) {
                         inputId="LOCATION", 
                         selected = x)
     })
+    
 
     # observe({
     #   # when user selects All, removes previously selected regions 
@@ -135,13 +164,13 @@ shinyServer(function(input, output) {
  
     output$histogram_policy_category <- renderPlot(
       {
-        count <- colSums(TABLE_TEMP() %>% select("category_nutrition_labeling","category_institutional_procurement",
+        count <- colSums(TABLE_TEMP() %>% select("category_institutional_procurement","category_nutrition_labeling",
                                                  "category_educational_campaign", 
                                                  "category_product_reformulation","category_other_who" )) 
         
         df_policy_count <- as.data.frame(count)
         df_policy_count$pct <- df_policy_count$count / nrow(TABLE_TEMP())
-        df_policy_count$category <- c("Nutrition \nlabeling","Institutional \nprocurement",  
+        df_policy_count$category <- c("Institutional \nprocurement",  "Nutrition \nlabeling",
                                       "Educational \ncampaign","Product \nreformulation","Other")
         ggplot(data=df_policy_count, aes(x=category, y=count, label = scales::percent(pct))) +
           geom_bar(stat="identity") + 
@@ -184,6 +213,8 @@ shinyServer(function(input, output) {
             df_organization_count$category <- c("Vending \nmachines", "Public-owned or\nleased facilities",
                                                 "Farmer's \nmarket", "School", "Restaurants", "Healthcare \nfacilities",
                                                 "Groceries", "Military \nrelated", "Other")
+            df_organization_count <- df_organization_count[order(df_organization_count$pct, decreasing = TRUE),]
+        
             ggplot(data=df_organization_count, 
                    aes(x=category, y=count, label = scales::percent(pct))) +
               geom_bar(stat="identity", width=0.6) + 
@@ -333,9 +364,9 @@ shinyServer(function(input, output) {
     }, deleteFile=FALSE)
     
     ####### OTHERS  ####### 
-    output$last_updated <- renderText({
-      paste("Data last updated:", "8/24/2022") 
-    })
+    #output$last_updated <- renderText({
+    #  paste("Data last updated:", "8/24/2022") 
+    #})
     output$num_policies <- renderText({
         paste("Total number of policies:", nrow(TABLE_TEMP())) 
         })
