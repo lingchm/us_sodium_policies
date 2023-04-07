@@ -10,8 +10,6 @@ import os
 import pandas as pd
 from time import sleep
 import numpy as np
-os.chdir("/Users/lingchm/Documents/Github/us_sodium_policies/code/twitter")
-
 from utils import tweet_lookup 
 from utils import user_follower
 from utils import user_lookup 
@@ -21,11 +19,11 @@ BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
 EXPORT_FOLDER = os.environ.get("EXPORT_FOLDER")
 KEYWORD = os.environ.get("KEYWORD")
 
-######## Pull all tweets given keyword 
 
+######## Pull all tweets given keyword 
 # https://developer.twitter.com/en/docs/twitter-api/enterprise/search-api/guides/operators
 
-'''
+# first round download first-level data from a tweet
 KEYWORD = "salt"
 file = KEYWORD + "_20060701-20230101_english_verified.csv"
 data = pd.read_csv(EXPORT_FOLDER + file, encoding='latin-1')
@@ -39,12 +37,10 @@ while e < data.shape[0]:
     e += 100000
     counter += 1
 
-'''
-
-for KEYWORD in ["salt" + str(i) for i in range(7,11)]: #["salty1", "salty2", "salty3"]: # 
+# second round adds second-level data such as data from referenced tweets 
+for KEYWORD in ["salt" + str(i) for i in range(1,11)]: 
     file = KEYWORD + "_20060701-20230101_english_verified"   
     
-    '''
     export_file = EXPORT_FOLDER + KEYWORD + ".csv"
     query_params = {'query': KEYWORD +" lang:en is:verified",
                     'start_time': '2006-07-01T00:00:00Z',
@@ -60,7 +56,6 @@ for KEYWORD in ["salt" + str(i) for i in range(7,11)]: #["salty1", "salty2", "sa
                     }
     print("Getting full archive tweets for: " + file)
     full_archive_search.get_tweets_by_user(file, query_params, export_file)
-    '''
 
     ###### fill in other information for the above tweets
     

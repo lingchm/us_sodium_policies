@@ -10,6 +10,7 @@ from time import sleep
 # export 'BEARER_TOKEN'='<your_bearer_token>'
 
 BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
+
 def create_url(usernames, user_fields = "user.fields=id,username"):
     # Specify the usernames that you want to lookup below
     # You can enter up to 100 comma-separated values.
@@ -52,7 +53,6 @@ def get_user_username(usernames):
         lookup_string = lookup_string + username + ","
     lookup_string += usernames[-1]
     #print(lookup_string)
-    
     url = create_url(lookup_string)
     json_response = connect_to_endpoint(url)
     #print(json.dumps(json_response, indent=4, sort_keys=True))

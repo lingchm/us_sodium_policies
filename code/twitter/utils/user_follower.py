@@ -17,13 +17,21 @@ def create_url_followers(user_ids):
     # public_metrics, url, username, verified, and withheld
     # url = "https://api.twitter.com/2/users/by?{}&{}".format(usernames, user_fields)
     url = "https://api.twitter.com/2/users/{}/followers".format(user_ids)
-    #url = "https://api.twitter.com/1.1/users/lookup.json?user_id=}"
     return url
 
 def create_url_metrics(username):
     url = "https://api.twitter.com/2/users/by/username/{}".format(username)
     return url
     
+def create_url(usernames, user_fields = "user.fields=id,username,name,public_metrics,location,created_at,verified,verified_type,description"):
+    # prepare lookup string format
+    lookup_string = "usernames="
+    for username in usernames[:-1]:
+        if isinstance(username, str):
+            lookup_string = lookup_string + username + ","
+    lookup_string += usernames[-1]
+    url = "https://api.twitter.com/2/users/by?{}&{}".format(lookup_string, user_fields)
+    return url
 
 def bearer_oauth(r):
     """
@@ -35,7 +43,7 @@ def bearer_oauth(r):
 
 def connect_to_endpoint(url, params):
     response = requests.request("GET", url, auth=bearer_oauth, params=params)
-    print(response.status_code)
+    #print(response.status_code)
     if response.status_code != 200:
         raise Exception(response.status_code, response.text)
     return response.json()
@@ -55,7 +63,7 @@ def get_user_followers(user_id, folder):
     """
     Pull tweets and and put them in a text file.
     """
-    export_file = folder + "followers/user_"+username+'.csv'
+    export_file = folder + "followers/user_"+user_id+'.csv'
     query_params = {
                 'max_results': "1000",
                 'pagination_token': None
@@ -63,8 +71,7 @@ def get_user_followers(user_id, folder):
     
     url = create_url_followers(str(user_id))
     json_response = connect_to_endpoint(url, query_params)
-    print(json_response)
-    
+ 
     followers = jason_to_df_followers(json_response)
     
     followers_all = followers.copy()
@@ -86,16 +93,13 @@ def get_user_followers(user_id, folder):
         followers_all = pd.concat([followers_all, followers], axis=0)
         counter += 1
         followers_counter += json_response["meta"]["result_count"]
-        print(username, " Request:", counter, " N followers:", followers_counter)
+        print(user_id, " Request:", counter, " N followers:", followers_counter)
             
         followers_all.to_csv(export_file)
         
     print("done")
     
     return followers_all
-
-
-    
 
 
 def get_user_public_metrics(username, query_params, export_file):
