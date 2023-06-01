@@ -116,6 +116,7 @@ print("total accounts:", len(usernames_list))
 print("total organizations:", len(organization_list))
 print("total accounts:", len(usernames_list))
 
+usernames_list = ["lingchm"]
     
 for username in usernames_list:
     
@@ -141,14 +142,15 @@ for username in usernames_list:
                 'next_token': None
                 }
         
-    if username in ["HillaryClinton", "MichelleObama", "letsmove","JoeBiden", "BarackObama"]:
+    #if username in ["HillaryClinton", "MichelleObama", "letsmove","JoeBiden", "BarackObama"]:
         #query_params['query'] = '(sodium OR salt OR food OR health) from:'+username
-        query_params['query'] = 'health from:'+username
-        continue
+        #query_params['query'] = 'health from:'+username
+        #continue
     
     print("Getting full archive tweets for: " + username)
     full_archive_search.get_tweets_by_user(username, query_params, export_file)
     
+    '''
     ## get reply username
     print("Getting reply usernames for ", username)
     user_lookup.get_reply_username(EXPORT_FOLDER + "original/user_" + username + ".csv", 
@@ -168,6 +170,6 @@ for username in usernames_list:
     #data = pd.read_csv(folder + "original/user_" + username + ".csv")
     #user_id = data.iloc[0,:]['author_id']
     #user_follower.get_user_followers(user_id, folder)
-    
+    '''
     sleep(5)
     

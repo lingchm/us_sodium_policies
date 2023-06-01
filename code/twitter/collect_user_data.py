@@ -21,11 +21,10 @@ EXPORT_FOLDER = os.environ.get("EXPORT_FOLDER")
 # get user-level data, such as number of follower and folowees
 
 # get list of usernames 
-usernames = pd.read_csv("data/twitter/sodium/sodium_usernames.csv", index_col=0)
+usernames = pd.read_csv("data/twitter/sodium/sodium_usernames_new.csv", header=0)
 usernames = usernames[usernames['username']!=""]
 usernames_list = usernames['username'].tolist()
 print("Total number of users:", len(usernames_list))
-
 
 public_metrics_all = pd.DataFrame(index=usernames_list, 
     columns=["id", "name", "location",'created_at',
@@ -38,20 +37,17 @@ public_metrics_all.index.name = "username"
 user_fields = "user.fields=id,username,name,public_metrics,location,created_at,verified,verified_type,description,protected,url"
 
 # batch search 
-
 l, k = 0, 0
 step = 100
 
 # start from previous 
-l, k = 0, 1
-public_metrics_all = pd.read_csv(EXPORT_FOLDER + "user_summary_metrics.csv", index_col=0) 
+#l, k = 0, 1
+#public_metrics_all = pd.read_csv(EXPORT_FOLDER + "user_summary_metrics.csv", index_col=0) 
 # failed for richardrushfield
-
-usernames_list = ['richardrushfield']
-
+#usernames_list = ['richardrushfield']
 
 while l < len(usernames_list):
-    try:
+    #try:
         url = user_follower.create_url(usernames_list[l:(l+step)], user_fields)
         json_response = user_follower.connect_to_endpoint(url, {})
         #print(json_response)
@@ -75,14 +71,14 @@ while l < len(usernames_list):
         l += step
         k += 1
         print("     Request", k, " User", l)
-    except:
-        print("Failed....")
-        sleep(10)
+    #except:
+        #print("Failed....")
+        #sleep(10)
 
-    public_metrics_all.to_csv(EXPORT_FOLDER + "user_summary_metrics_.csv") 
+        public_metrics_all.to_csv(EXPORT_FOLDER + "user_summary_metrics_new.csv") 
 
 public_metrics_all['year'] = pd.DatetimeIndex(public_metrics_all['created_at']).year
-public_metrics_all.to_csv(EXPORT_FOLDER + "user_summary_metrics.csv")
+public_metrics_all.to_csv(EXPORT_FOLDER + "user_summary_metrics_new.csv")
 
 
 '''
