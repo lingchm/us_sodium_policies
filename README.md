@@ -6,13 +6,17 @@ This repository serves for several ongoing projects from Dr. Yanfang Su's lab re
 * Policy maintenance 
 
 The code serves for the purposes of:
-- Compile sodium-related policies in the U.S. from multiple sources
-- Web-based dahsboard showing temporal and spatial stats our policy data: https://us-sodium-policies.shinyapps.io/Rshiny/
-- Retrieve tweets from Twitter API  
-- Conduct influence analysis of sodium-related stakeholders on Twitter
+- Compile historical sodium-related policies in the U.S. from multiple sources
+- Our web-based dahsboard showing temporal and spatial stats our policy data: https://us-sodium-policies.shinyapps.io/Rshiny/
+- Retrieve tweets from social media, including
+  - Twitter API
+  - Linkedin
+  - Wikipedia 
+- Influence analysis of sodium-related stakeholders on Twitter
 
 This code have been used for the following publications:
 
+```
 @article{mao20234d,
   title={A 4D Theoretical Framework for Measuring Topic-Specific Influence on Twitter: Development and Usability Study on Dietary Sodium Tweets},
   author={Mao, Lingchao and Chu, Emily and Gu, Jinghong and Hu, Tao and Weiner, Bryan J and Su, Yanfang},
@@ -22,3 +26,4 @@ This code have been used for the following publications:
   year={2023},
   publisher={JMIR Publications Toronto, Canada}
 }
+```
