@@ -5,9 +5,10 @@ account: us-sodium-policies
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 6842201
-bundleId: 6331925
+bundleId: 6904997
 url: https://us-sodium-policies.shinyapps.io/Rshiny/
-when: 1663951275.32542
+when: 1677721125.61696
+lastSyncTime: 1677721125.61698
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: images/.DS_Store
